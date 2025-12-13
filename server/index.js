@@ -35,6 +35,183 @@ async function connectDB() {
   }
 }
 
+// ==================== DEFAULT TOURS DATA ====================
+const DEFAULT_TOURS = [
+  {
+    id: 'golden-triangle',
+    title: 'The Royal Golden Triangle',
+    location: 'Delhi - Agra - Jaipur',
+    days: 6,
+    price: 45000,
+    category: 'Culture',
+    featured: true,
+    image: 'https://images.unsplash.com/photo-1548013146-72479768bada?q=80&w=1600&auto=format&fit=crop',
+    description: 'Immerse yourself in the opulent history of North India.',
+    highlights: ['Sunrise at Taj Mahal', 'Amber Fort Jeep Ride'],
+    itinerary: []
+  },
+  {
+    id: 'kerala-backwaters',
+    title: 'Emerald Backwaters & Hills',
+    location: 'Cochin - Munnar - Alleppey',
+    days: 7,
+    price: 38500,
+    category: 'Nature',
+    featured: true,
+    image: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?q=80&w=1600&auto=format&fit=crop',
+    description: 'Drift through the silent palm-fringed canals.',
+    highlights: ['Luxury Houseboat Stay', 'Tea Tasting in Munnar'],
+    itinerary: []
+  },
+  {
+    id: 'ladakh-adventure',
+    title: 'Himalayan Highs: Ladakh',
+    location: 'Leh - Nubra - Pangong',
+    days: 8,
+    price: 52000,
+    category: 'Adventure',
+    featured: true,
+    image: 'https://images.unsplash.com/photo-1581793745862-99fde7fa73d2?q=80&w=1600&auto=format&fit=crop',
+    description: 'A surreal journey to the roof of the world.',
+    highlights: ['Khardung La Pass Crossing', 'Glamping at Pangong Lake'],
+    itinerary: []
+  }
+];
+
+// ==================== TOUR ROUTES ====================
+
+// GET all tours
+app.get('/api/tours', async (req, res) => {
+  try {
+    let tours = await db.collection('tours').find({}).toArray();
+
+    // If no tours exist, seed with default tours
+    if (tours.length === 0) {
+      await db.collection('tours').insertMany(DEFAULT_TOURS);
+      tours = await db.collection('tours').find({}).toArray();
+      console.log('✅ Seeded default tours');
+    }
+
+    const transformed = tours.map(tour => ({
+      ...tour,
+      id: tour.id || tour._id.toString(),
+      _id: undefined
+    }));
+
+    res.json(transformed);
+  } catch (error) {
+    console.error('Error fetching tours:', error);
+    res.status(500).json({ error: 'Failed to fetch tours' });
+  }
+});
+
+// GET single tour by ID
+app.get('/api/tours/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    let tour = await db.collection('tours').findOne({ id: id });
+    
+    if (!tour) {
+      try {
+        tour = await db.collection('tours').findOne({ _id: new ObjectId(id) });
+      } catch (e) {}
+    }
+
+    if (!tour) {
+      return res.status(404).json({ error: 'Tour not found' });
+    }
+
+    res.json({
+      ...tour,
+      id: tour.id || tour._id.toString(),
+      _id: undefined
+    });
+  } catch (error) {
+    console.error('Error fetching tour:', error);
+    res.status(500).json({ error: 'Failed to fetch tour' });
+  }
+});
+
+// POST new tour
+app.post('/api/tours', async (req, res) => {
+  try {
+    const tourData = req.body;
+    
+    if (!tourData.id) {
+      tourData.id = `tour-${Date.now()}`;
+    }
+    
+    tourData.createdAt = new Date().toISOString();
+
+    await db.collection('tours').insertOne(tourData);
+
+    res.status(201).json({
+      ...tourData,
+      id: tourData.id
+    });
+  } catch (error) {
+    console.error('Error creating tour:', error);
+    res.status(500).json({ error: 'Failed to create tour' });
+  }
+});
+
+// PATCH update tour
+app.patch('/api/tours/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    updates.updatedAt = new Date().toISOString();
+
+    let result = await db.collection('tours').updateOne(
+      { id: id },
+      { $set: updates }
+    );
+
+    if (result.matchedCount === 0) {
+      try {
+        result = await db.collection('tours').updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updates }
+        );
+      } catch (e) {}
+    }
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Tour not found' });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating tour:', error);
+    res.status(500).json({ error: 'Failed to update tour' });
+  }
+});
+
+// DELETE tour
+app.delete('/api/tours/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    let result = await db.collection('tours').deleteOne({ id: id });
+
+    if (result.deletedCount === 0) {
+      try {
+        result = await db.collection('tours').deleteOne({ _id: new ObjectId(id) });
+      } catch (e) {}
+    }
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Tour not found' });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting tour:', error);
+    res.status(500).json({ error: 'Failed to delete tour' });
+  }
+});
+
 // ==================== INQUIRY ROUTES ====================
 
 // GET all inquiries
@@ -128,29 +305,22 @@ async function initializeAdmin() {
       await db.collection('admin').insertOne({
         username: 'admin',
         password: 'hibiscus2025',
+        passwordVersion: 1,
         createdAt: new Date().toISOString()
       });
       console.log('✅ Default admin credentials created');
     } else {
+      // Add passwordVersion if missing
+      if (!existingAdmin.passwordVersion) {
+        await db.collection('admin').updateOne(
+          { _id: existingAdmin._id },
+          { $set: { passwordVersion: 1 } }
+        );
+      }
       console.log('✅ Admin exists:', existingAdmin.username);
     }
   } catch (error) {
     console.error('Error initializing admin:', error);
-  }
-}
-
-// Reset admin credentials (run once to fix)
-async function resetAdmin() {
-  try {
-    await db.collection('admin').deleteMany({});
-    await db.collection('admin').insertOne({
-      username: 'admin',
-      password: 'hibiscus2025',
-      createdAt: new Date().toISOString()
-    });
-    console.log('✅ Admin credentials reset to default');
-  } catch (error) {
-    console.error('Error resetting admin:', error);
   }
 }
 
@@ -165,13 +335,41 @@ app.post('/api/admin/login', async (req, res) => {
     });
     
     if (admin) {
-      res.json({ success: true, message: 'Login successful' });
+      res.json({ 
+        success: true, 
+        message: 'Login successful',
+        passwordVersion: admin.passwordVersion || 1
+      });
     } else {
       res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
   } catch (error) {
     console.error('Error during login:', error);
     res.status(500).json({ success: false, message: 'Login failed' });
+  }
+});
+
+// POST - Verify session (check if password version matches)
+app.post('/api/admin/verify', async (req, res) => {
+  try {
+    const { passwordVersion } = req.body;
+    
+    const admin = await db.collection('admin').findOne({});
+    
+    if (!admin) {
+      return res.status(401).json({ valid: false, message: 'No admin found' });
+    }
+
+    const currentVersion = admin.passwordVersion || 1;
+    
+    if (passwordVersion && parseInt(passwordVersion) === currentVersion) {
+      res.json({ valid: true, passwordVersion: currentVersion });
+    } else {
+      res.status(401).json({ valid: false, message: 'Session expired - password was changed' });
+    }
+  } catch (error) {
+    console.error('Error verifying session:', error);
+    res.status(500).json({ valid: false, message: 'Verification failed' });
   }
 });
 
@@ -188,13 +386,22 @@ app.get('/api/admin/check', async (req, res) => {
 // POST - Reset admin credentials to default
 app.post('/api/admin/reset', async (req, res) => {
   try {
+    // Get current version to increment
+    const currentAdmin = await db.collection('admin').findOne({});
+    const newVersion = (currentAdmin?.passwordVersion || 0) + 1;
+
     await db.collection('admin').deleteMany({});
     await db.collection('admin').insertOne({
       username: 'admin',
       password: 'hibiscus2025',
+      passwordVersion: newVersion,
       createdAt: new Date().toISOString()
     });
-    res.json({ success: true, message: 'Admin credentials reset to default (admin/hibiscus2025)' });
+    res.json({ 
+      success: true, 
+      message: 'Admin credentials reset to default (admin/hibiscus2025). All sessions invalidated.',
+      passwordVersion: newVersion
+    });
   } catch (error) {
     res.status(500).json({ error: 'Failed to reset admin' });
   }

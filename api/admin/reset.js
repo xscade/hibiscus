@@ -19,16 +19,22 @@ export default async function handler(req, res) {
   try {
     const { db } = await connectToDatabase();
 
+    // Get current admin to increment passwordVersion
+    const currentAdmin = await db.collection('admin').findOne({});
+    const newVersion = (currentAdmin?.passwordVersion || 0) + 1;
+
     await db.collection('admin').deleteMany({});
     await db.collection('admin').insertOne({
       username: 'admin',
       password: 'hibiscus2025',
+      passwordVersion: newVersion,
       createdAt: new Date().toISOString()
     });
 
     return res.status(200).json({ 
       success: true, 
-      message: 'Admin credentials reset to default (admin/hibiscus2025)' 
+      message: 'Admin credentials reset to default (admin/hibiscus2025). All sessions invalidated.',
+      passwordVersion: newVersion
     });
   } catch (error) {
     console.error('Reset Error:', error);

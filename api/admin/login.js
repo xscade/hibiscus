@@ -20,16 +20,26 @@ export default async function handler(req, res) {
     const { db } = await connectToDatabase();
     const { username, password } = req.body;
 
-    // Check if admin exists, if not create default
+    // Check if admin exists, if not create default with passwordVersion
     let admin = await db.collection('admin').findOne({});
     
     if (!admin) {
       await db.collection('admin').insertOne({
         username: 'admin',
         password: 'hibiscus2025',
+        passwordVersion: 1,
         createdAt: new Date().toISOString()
       });
-      admin = { username: 'admin', password: 'hibiscus2025' };
+      admin = { username: 'admin', password: 'hibiscus2025', passwordVersion: 1 };
+    }
+
+    // Add passwordVersion if it doesn't exist (for existing records)
+    if (!admin.passwordVersion) {
+      await db.collection('admin').updateOne(
+        { _id: admin._id },
+        { $set: { passwordVersion: 1 } }
+      );
+      admin.passwordVersion = 1;
     }
 
     // Verify credentials
@@ -39,7 +49,11 @@ export default async function handler(req, res) {
     });
 
     if (validAdmin) {
-      return res.status(200).json({ success: true, message: 'Login successful' });
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Login successful',
+        passwordVersion: validAdmin.passwordVersion || 1
+      });
     } else {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
