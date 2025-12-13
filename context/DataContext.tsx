@@ -2,8 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Tour, Inquiry } from '../types';
 import { TOURS as INITIAL_TOURS } from '../constants';
 
-// API Base URL - change this to your deployed server URL in production
-const API_URL = 'http://localhost:5000/api';
+// API Base URL - uses relative URL in production (Vercel), localhost in development
+const API_URL = import.meta.env.DEV ? 'http://localhost:5000/api' : '/api';
 
 interface DataContextType {
   tours: Tour[];

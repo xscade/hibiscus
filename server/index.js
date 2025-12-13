@@ -1,6 +1,10 @@
 import express from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv';
 import { MongoClient, ObjectId } from 'mongodb';
+
+// Load environment variables from .env.local
+dotenv.config({ path: '../.env.local' });
 
 const app = express();
 const PORT = 5000;
@@ -10,7 +14,13 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB Connection
-const MONGODB_URI = 'mongodb+srv://jasmithkumar2k1_db_user:dv6TddiIkWi2uIeI@websitedb.zikavlk.mongodb.net/?appName=websitedb';
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+  console.error('❌ MONGODB_URI is not defined in .env.local');
+  process.exit(1);
+}
+
 const client = new MongoClient(MONGODB_URI);
 let db;
 
@@ -121,9 +131,26 @@ async function initializeAdmin() {
         createdAt: new Date().toISOString()
       });
       console.log('✅ Default admin credentials created');
+    } else {
+      console.log('✅ Admin exists:', existingAdmin.username);
     }
   } catch (error) {
     console.error('Error initializing admin:', error);
+  }
+}
+
+// Reset admin credentials (run once to fix)
+async function resetAdmin() {
+  try {
+    await db.collection('admin').deleteMany({});
+    await db.collection('admin').insertOne({
+      username: 'admin',
+      password: 'hibiscus2025',
+      createdAt: new Date().toISOString()
+    });
+    console.log('✅ Admin credentials reset to default');
+  } catch (error) {
+    console.error('Error resetting admin:', error);
   }
 }
 
@@ -155,6 +182,21 @@ app.get('/api/admin/check', async (req, res) => {
     res.json({ exists: !!admin });
   } catch (error) {
     res.status(500).json({ error: 'Failed to check admin' });
+  }
+});
+
+// POST - Reset admin credentials to default
+app.post('/api/admin/reset', async (req, res) => {
+  try {
+    await db.collection('admin').deleteMany({});
+    await db.collection('admin').insertOne({
+      username: 'admin',
+      password: 'hibiscus2025',
+      createdAt: new Date().toISOString()
+    });
+    res.json({ success: true, message: 'Admin credentials reset to default (admin/hibiscus2025)' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to reset admin' });
   }
 });
 
