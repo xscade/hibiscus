@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hibiscus Holiday | Luxury Indian Escapes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Great+Vibes&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Outfit', 'sans-serif'],
+              serif: ['Playfair Display', 'serif'],
+              script: ['Great Vibes', 'cursive'],
+            },
+            colors: {
+              hibiscus: {
+                50: '#fff0f3',
+                100: '#ffe3e8',
+                200: '#ffc9d6',
+                300: '#ff9fb6',
+                400: '#ff668a',
+                500: '#f7255b', // Vibrant Pink-Red
+                600: '#e00a45', // Primary Brand Color (Deep Hibiscus)
+                700: '#bd0435',
+                800: '#9e0630',
+                900: '#85092d',
+              },
+              gold: {
+                300: '#fde047',
+                400: '#facc15',
+                500: '#eab308', // Marigold
+                600: '#ca8a04',
+                700: '#a16207',
+              },
+              cream: '#fffaf5',
+              sand: '#f5f5f4',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      /* Smooth Scrolling */
+      html {
+        scroll-behavior: smooth;
+      }
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #fff0f3;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #e00a45;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #bd0435;
+      }
+      /* Text selection color */
+      ::selection {
+        background-color: #ffc9d6;
+        color: #85092d;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.10.1",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
+    "framer-motion": "https://aistudiocdn.com/framer-motion@^12.23.25"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-cream text-stone-800 antialiased">
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
