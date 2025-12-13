@@ -23,7 +23,10 @@ import {
   ArrowLeft,
   Home,
   Eye,
-  EyeOff
+  EyeOff,
+  Star,
+  ListOrdered,
+  Minus
 } from 'lucide-react';
 import { Tour } from '../types';
 
@@ -47,6 +50,11 @@ const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'tours' | 'inquiries'>('inquiries');
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editingTour, setEditingTour] = useState<Partial<Tour> | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Highlight & Itinerary Input State
+  const [newHighlight, setNewHighlight] = useState('');
+  const [newItineraryDay, setNewItineraryDay] = useState({ title: '', description: '' });
 
   // New Tour Template
   const emptyTour: Tour = {
@@ -61,6 +69,57 @@ const Dashboard: React.FC = () => {
     featured: false,
     highlights: [],
     itinerary: []
+  };
+
+  // Add highlight
+  const handleAddHighlight = () => {
+    if (!newHighlight.trim() || !editingTour) return;
+    const currentHighlights = editingTour.highlights || [];
+    setEditingTour({
+      ...editingTour,
+      highlights: [...currentHighlights, newHighlight.trim()]
+    });
+    setNewHighlight('');
+  };
+
+  // Remove highlight
+  const handleRemoveHighlight = (index: number) => {
+    if (!editingTour) return;
+    const currentHighlights = editingTour.highlights || [];
+    setEditingTour({
+      ...editingTour,
+      highlights: currentHighlights.filter((_, i) => i !== index)
+    });
+  };
+
+  // Add itinerary day
+  const handleAddItineraryDay = () => {
+    if (!newItineraryDay.title.trim() || !editingTour) return;
+    const currentItinerary = editingTour.itinerary || [];
+    const newDay = {
+      day: currentItinerary.length + 1,
+      title: newItineraryDay.title.trim(),
+      description: newItineraryDay.description.trim()
+    };
+    setEditingTour({
+      ...editingTour,
+      itinerary: [...currentItinerary, newDay]
+    });
+    setNewItineraryDay({ title: '', description: '' });
+  };
+
+  // Remove itinerary day
+  const handleRemoveItineraryDay = (index: number) => {
+    if (!editingTour) return;
+    const currentItinerary = editingTour.itinerary || [];
+    // Re-number days after removal
+    const updatedItinerary = currentItinerary
+      .filter((_, i) => i !== index)
+      .map((item, i) => ({ ...item, day: i + 1 }));
+    setEditingTour({
+      ...editingTour,
+      itinerary: updatedItinerary
+    });
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -90,18 +149,28 @@ const Dashboard: React.FC = () => {
     setIsEditing(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!editingTour || !editingTour.id) return;
     
-    // Check if it's an update or create
-    const exists = tours.find(t => t.id === editingTour.id);
-    if (exists) {
-      updateTour(editingTour.id, editingTour);
-    } else {
-      addTour(editingTour as Tour);
+    setSaving(true);
+    try {
+      // Check if it's an update or create
+      const exists = tours.find(t => t.id === editingTour.id);
+      if (exists) {
+        await updateTour(editingTour.id, editingTour);
+      } else {
+        await addTour(editingTour as Tour);
+      }
+      setIsEditing(false);
+      setEditingTour(null);
+      setNewHighlight('');
+      setNewItineraryDay({ title: '', description: '' });
+    } catch (error) {
+      console.error('Failed to save tour:', error);
+      alert('Failed to save tour. Please try again.');
+    } finally {
+      setSaving(false);
     }
-    setIsEditing(false);
-    setEditingTour(null);
   };
 
   const handleDelete = (id: string) => {
@@ -490,25 +559,140 @@ const Dashboard: React.FC = () => {
                    <label htmlFor="featured" className="font-bold text-stone-700">Mark as Featured Tour</label>
                 </div>
 
-                {/* Simplified view for Itinerary & Highlights for demo purposes */}
-                <div className="bg-orange-50 p-4 rounded-xl text-orange-800 text-sm">
-                  <p><strong>Note:</strong> Highlights and Itinerary editing is simplified for this demo. Advanced list editing can be added.</p>
+                {/* Highlights Section */}
+                <div className="border border-stone-200 rounded-xl p-4 bg-stone-50">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Star size={18} className="text-hibiscus-600" />
+                    <h3 className="font-bold text-stone-800">Highlights</h3>
+                  </div>
+                  
+                  {/* Current Highlights */}
+                  <div className="space-y-2 mb-4">
+                    {(editingTour.highlights || []).length === 0 ? (
+                      <p className="text-stone-400 text-sm italic">No highlights added yet</p>
+                    ) : (
+                      (editingTour.highlights || []).map((highlight, index) => (
+                        <div key={index} className="flex items-center gap-2 bg-white p-3 rounded-lg border border-stone-100">
+                          <span className="flex-1 text-stone-700">{highlight}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveHighlight(index)}
+                            className="p-1 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Minus size={16} />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  
+                  {/* Add New Highlight */}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newHighlight}
+                      onChange={(e) => setNewHighlight(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddHighlight())}
+                      placeholder="Enter a highlight..."
+                      className="flex-1 bg-white border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-hibiscus-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddHighlight}
+                      className="px-4 py-2 bg-hibiscus-600 text-white rounded-lg text-sm font-bold hover:bg-hibiscus-700 transition-colors flex items-center gap-1"
+                    >
+                      <Plus size={16} /> Add
+                    </button>
+                  </div>
+                </div>
+
+                {/* Itinerary Section */}
+                <div className="border border-stone-200 rounded-xl p-4 bg-stone-50">
+                  <div className="flex items-center gap-2 mb-4">
+                    <ListOrdered size={18} className="text-hibiscus-600" />
+                    <h3 className="font-bold text-stone-800">Itinerary (Day by Day)</h3>
+                  </div>
+                  
+                  {/* Current Itinerary Days */}
+                  <div className="space-y-3 mb-4">
+                    {(editingTour.itinerary || []).length === 0 ? (
+                      <p className="text-stone-400 text-sm italic">No itinerary days added yet</p>
+                    ) : (
+                      (editingTour.itinerary || []).map((day, index) => (
+                        <div key={index} className="bg-white p-4 rounded-lg border border-stone-100">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="bg-hibiscus-100 text-hibiscus-700 text-xs font-bold px-2 py-1 rounded">
+                                  Day {day.day}
+                                </span>
+                                <h4 className="font-bold text-stone-800">{day.title}</h4>
+                              </div>
+                              <p className="text-stone-600 text-sm">{day.description}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveItineraryDay(index)}
+                              className="p-1 text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                            >
+                              <Minus size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  
+                  {/* Add New Itinerary Day */}
+                  <div className="bg-white p-4 rounded-lg border border-dashed border-stone-300">
+                    <p className="text-xs text-stone-500 font-bold mb-2">ADD DAY {(editingTour.itinerary || []).length + 1}</p>
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={newItineraryDay.title}
+                        onChange={(e) => setNewItineraryDay({...newItineraryDay, title: e.target.value})}
+                        placeholder="Day title (e.g., Arrival in Delhi)"
+                        className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-hibiscus-500"
+                      />
+                      <textarea
+                        value={newItineraryDay.description}
+                        onChange={(e) => setNewItineraryDay({...newItineraryDay, description: e.target.value})}
+                        placeholder="Day description..."
+                        rows={2}
+                        className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-hibiscus-500 resize-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddItineraryDay}
+                        disabled={!newItineraryDay.title.trim()}
+                        className="w-full px-4 py-2 bg-hibiscus-600 text-white rounded-lg text-sm font-bold hover:bg-hibiscus-700 disabled:bg-stone-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1"
+                      >
+                        <Plus size={16} /> Add Day to Itinerary
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
               </div>
 
               <div className="bg-stone-50 p-6 flex justify-end gap-4 rounded-b-3xl">
                 <button 
-                  onClick={() => setIsEditing(false)}
+                  onClick={() => {
+                    setIsEditing(false);
+                    setNewHighlight('');
+                    setNewItineraryDay({ title: '', description: '' });
+                  }}
+                  disabled={saving}
                   className="px-6 py-3 rounded-xl font-bold text-stone-500 hover:bg-stone-200 transition-colors"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={handleSave}
-                  className="bg-hibiscus-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-hibiscus-700 transition-colors shadow-lg shadow-hibiscus-600/20"
+                  disabled={saving}
+                  className="bg-hibiscus-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-hibiscus-700 disabled:bg-hibiscus-400 transition-colors shadow-lg shadow-hibiscus-600/20 flex items-center gap-2"
                 >
-                  Save Tour
+                  {saving ? 'Saving...' : 'Save Tour'}
                 </button>
               </div>
             </motion.div>
