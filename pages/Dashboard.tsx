@@ -21,7 +21,9 @@ import {
   LogOut,
   ArrowRight,
   ArrowLeft,
-  Home
+  Home,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { Tour } from '../types';
 
@@ -33,6 +35,7 @@ const Dashboard: React.FC = () => {
   // Auth State
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
 
@@ -155,15 +158,22 @@ const Dashboard: React.FC = () => {
                 disabled={loginLoading}
               />
             </div>
-            <div>
+            <div className="relative">
               <input 
-                type="password" 
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
-                className="w-full bg-stone-900/50 border border-white/10 rounded-xl px-4 py-4 text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-hibiscus-500 transition-all"
+                className="w-full bg-stone-900/50 border border-white/10 rounded-xl px-4 py-4 pr-12 text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-hibiscus-500 transition-all"
                 disabled={loginLoading}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-white transition-colors"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
             </div>
             {error && (
               <p className="text-red-400 text-xs text-center font-bold">{error}</p>
