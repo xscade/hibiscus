@@ -15,6 +15,10 @@ export default async function handler(req, res) {
 
   const { id } = req.query;
 
+  if (!id) {
+    return res.status(400).json({ error: 'Tour ID is required' });
+  }
+
   try {
     const { db } = await connectToDatabase();
 
@@ -69,6 +73,7 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: 'Tour not found' });
       }
 
+      console.log('✅ Updated tour:', id);
       return res.status(200).json({ success: true });
     }
 
@@ -90,13 +95,13 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: 'Tour not found' });
       }
 
+      console.log('✅ Deleted tour:', id);
       return res.status(200).json({ success: true });
     }
 
     res.status(405).json({ error: 'Method not allowed' });
   } catch (error) {
     console.error('Tour API Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error: ' + error.message });
   }
 }
-

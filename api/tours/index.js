@@ -1,6 +1,6 @@
 import { connectToDatabase } from '../lib/mongodb.js';
 
-// Default tours to seed if collection is empty - FULL DATA
+// All tours data - this is the source of truth
 const DEFAULT_TOURS = [
   {
     id: 'goa-package-3n4d',
@@ -283,18 +283,24 @@ export default async function handler(req, res) {
     return;
   }
 
-  try {
-    const { db } = await connectToDatabase();
-
-    // GET - Fetch all tours
-    if (req.method === 'GET') {
+  // GET - Fetch all tours
+  if (req.method === 'GET') {
+    try {
+      const { db } = await connectToDatabase();
       let tours = await db.collection('tours').find({}).toArray();
 
       // If no tours exist, seed with default tours
-      if (tours.length === 0) {
-        await db.collection('tours').insertMany(DEFAULT_TOURS);
-        tours = await db.collection('tours').find({}).toArray();
-        console.log('✅ Seeded default tours');
+      if (!tours || tours.length === 0) {
+        console.log('No tours found, seeding database...');
+        try {
+          await db.collection('tours').insertMany(DEFAULT_TOURS);
+          tours = await db.collection('tours').find({}).toArray();
+          console.log('✅ Seeded', tours.length, 'tours to MongoDB');
+        } catch (seedError) {
+          console.error('Failed to seed tours:', seedError);
+          // Return default tours if seeding fails
+          return res.status(200).json(DEFAULT_TOURS);
+        }
       }
 
       // Transform _id to id for frontend compatibility
@@ -305,10 +311,17 @@ export default async function handler(req, res) {
       }));
 
       return res.status(200).json(transformed);
+    } catch (error) {
+      console.error('MongoDB Error, returning default tours:', error.message);
+      // Return default tours if MongoDB fails
+      return res.status(200).json(DEFAULT_TOURS);
     }
+  }
 
-    // POST - Create new tour
-    if (req.method === 'POST') {
+  // POST - Create new tour
+  if (req.method === 'POST') {
+    try {
+      const { db } = await connectToDatabase();
       const tourData = req.body;
       
       // Ensure tour has an id
@@ -318,17 +331,18 @@ export default async function handler(req, res) {
       
       tourData.createdAt = new Date().toISOString();
 
-      const result = await db.collection('tours').insertOne(tourData);
+      await db.collection('tours').insertOne(tourData);
+      console.log('✅ Created tour:', tourData.id);
 
       return res.status(201).json({
         ...tourData,
         id: tourData.id
       });
+    } catch (error) {
+      console.error('Failed to create tour:', error);
+      return res.status(500).json({ error: 'Failed to create tour: ' + error.message });
     }
-
-    res.status(405).json({ error: 'Method not allowed' });
-  } catch (error) {
-    console.error('Tours API Error:', error);
-    res.status(500).json({ error: 'Internal server error: ' + error.message });
   }
+
+  res.status(405).json({ error: 'Method not allowed' });
 }

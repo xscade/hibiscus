@@ -22,8 +22,8 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Tours from MongoDB
-  const [tours, setTours] = useState<Tour[]>([]);
+  // Tours from MongoDB - initialize with fallback data for instant display
+  const [tours, setTours] = useState<Tour[]>(INITIAL_TOURS);
   const [toursLoading, setToursLoading] = useState(true);
 
   // Inquiries from MongoDB
@@ -37,7 +37,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await fetch(`${API_URL}/tours`);
       if (response.ok) {
         const data = await response.json();
-        setTours(data);
+        // Only update if we got actual tours, otherwise keep fallback
+        if (data && Array.isArray(data) && data.length > 0) {
+          setTours(data);
+        } else {
+          console.warn('API returned empty tours, using fallback');
+          setTours(INITIAL_TOURS);
+        }
       } else {
         // Fallback to constants if API fails
         console.warn('Failed to fetch tours from API, using fallback');
