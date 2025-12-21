@@ -139,6 +139,32 @@ export const TOURS: Tour[] = [
       { day: 5, title: 'Romantic Lakes', description: 'Boat ride on Lake Pichola and Jag Mandir visit.' },
       { day: 6, title: 'Departure', description: 'Transfer to Udaipur airport.' }
     ]
+  },
+  {
+    id: 'goa-3n4d-package',
+    title: 'Goa Beach Escape 3N/4D',
+    location: 'Goa',
+    days: 4,
+    price: 30500,
+    category: 'Relaxation',
+    packageType: 'domestic',
+    featured: true,
+    image: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?q=80&w=1600&auto=format&fit=crop',
+    description: 'Experience the best of Goa with this 3 Nights / 4 Days package. Explore pristine beaches of North & South Goa, visit historic churches, enjoy boat cruises on River Mandovi, and relax at premium hotels with breakfast included.',
+    highlights: [
+      'Airport/Railway Station Pickup & Drop',
+      'North Goa Sightseeing - Baga, Calangute, Anjuna Beaches',
+      'South Goa Sightseeing - Old Goa Church, Mangueshi Temple',
+      'Boat Cruise at River Mandovi',
+      'Breakfast at Hotel',
+      'AC Sedan for all transfers'
+    ],
+    itinerary: [
+      { day: 1, title: 'Arrival at Goa', description: 'Arrive at Goa Airport/Railway Station. Private pickup and transfer to your hotel. Complete check-in and enjoy a comfortable overnight stay.' },
+      { day: 2, title: 'South Goa Sightseeing (10 AM - 7 PM)', description: 'After breakfast, explore South Goa: Old Goa Church, Mangueshi Temple, Dona Paula, Miramar Beach, Panjim Shopping, and Boat Cruise at River Mandovi. Return to hotel for overnight stay.' },
+      { day: 3, title: 'North Goa Sightseeing (10 AM - 5 PM)', description: 'After breakfast, drive to North Goa: Anjuna Beach, Vagator Beach, Baga Beach, Siquirim Beach, Calangute Beach, and Fort Aguada. Comfortable overnight stay at hotel.' },
+      { day: 4, title: 'Departure', description: 'After breakfast, check out from hotel and transfer to Goa Airport/Railway Station for your return journey. Tour ends with beautiful memories!' }
+    ]
   }
 ];
 
