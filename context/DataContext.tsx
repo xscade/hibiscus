@@ -37,19 +37,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await fetch(`${API_URL}/tours`);
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Tours fetched from API:', data.length, 'tours');
-        console.log('Tours data:', data);
         setTours(data);
       } else {
         // Fallback to constants if API fails
-        console.warn('⚠️ Failed to fetch tours from API, using fallback');
-        console.warn('Response status:', response.status);
+        console.warn('Failed to fetch tours from API, using fallback');
         setTours(INITIAL_TOURS);
       }
     } catch (error) {
-      console.error('❌ Failed to fetch tours:', error);
+      console.error('Failed to fetch tours:', error);
       // Fallback to constants if API fails
-      console.warn('Using fallback tours from constants');
       setTours(INITIAL_TOURS);
     } finally {
       setToursLoading(false);

@@ -9,7 +9,6 @@ import { PackageType } from '../types';
 const AllTours: React.FC = () => {
   const { tours, toursLoading } = useData();
   const location = useLocation();
-  const [showAllTours, setShowAllTours] = useState(false);
   
   // Get tab from URL hash or default to first tab (trending)
   const getInitialTab = (): PackageType => {
@@ -30,41 +29,14 @@ const AllTours: React.FC = () => {
   }, [location.hash]);
 
   // Filter tours by active tab - handle missing packageType by defaulting to 'domestic'
-  const filteredTours = showAllTours 
-    ? tours // Show all tours if debug mode
-    : tours.filter(tour => {
-        const tourPackageType = tour.packageType || 'domestic'; // Default to domestic if missing
-        const matches = tourPackageType === activeTab;
-        return matches;
-      });
+  const filteredTours = tours.filter(tour => {
+    const tourPackageType = tour.packageType || 'domestic'; // Default to domestic if missing
+    return tourPackageType === activeTab;
+  });
 
   // Get active tab info
   const activeTabInfo = PACKAGE_TYPES.find(p => p.id === activeTab);
 
-  // Debug: Log all tours and their packageTypes
-  useEffect(() => {
-    console.log('=== TOURS DEBUG ===');
-    console.log('Total tours loaded:', tours.length);
-    console.log('Active tab:', activeTab);
-    console.log('Filtered tours count:', filteredTours.length);
-    console.log('ToursLoading:', toursLoading);
-    
-    if (tours.length > 0) {
-      console.log('Tours breakdown by packageType:');
-      const breakdown: Record<string, number> = {};
-      tours.forEach(tour => {
-        const pkgType = tour.packageType || 'MISSING';
-        breakdown[pkgType] = (breakdown[pkgType] || 0) + 1;
-        console.log(`  - "${tour.title}": packageType="${pkgType}"`);
-      });
-      console.log('Summary:', breakdown);
-    } else {
-      console.warn('⚠️ No tours loaded! Check API connection.');
-    }
-    
-    console.log('Available Package Types:', PACKAGE_TYPES.map(p => `${p.id} (${p.name})`));
-    console.log('===================');
-  }, [tours, activeTab, filteredTours, toursLoading]);
 
   return (
     <div className="pt-28 min-h-screen bg-cream pb-24">
@@ -149,17 +121,9 @@ const AllTours: React.FC = () => {
         <div className="text-center mb-8">
           <h2 className="text-2xl md:text-3xl font-serif font-bold text-stone-900 flex items-center justify-center gap-3">
             <span className="text-3xl">{activeTabInfo?.icon}</span>
-            {showAllTours ? 'All Tours' : activeTabInfo?.name}
+            {activeTabInfo?.name}
           </h2>
           <div className="w-24 h-1 bg-hibiscus-600 mx-auto mt-3 rounded-full"></div>
-          {tours.length > 0 && (
-            <button
-              onClick={() => setShowAllTours(!showAllTours)}
-              className="mt-4 text-xs text-hibiscus-600 hover:text-hibiscus-700 underline"
-            >
-              {showAllTours ? 'Show Filtered Tours' : `Show All ${tours.length} Tours (Debug)`}
-            </button>
-          )}
         </div>
 
         {/* Tours Grid */}
@@ -181,23 +145,6 @@ const AllTours: React.FC = () => {
                 <div className="text-6xl mb-4">{activeTabInfo?.icon}</div>
                 <h3 className="text-xl font-bold text-stone-900 mb-2">No Tours Available Yet</h3>
                 <p className="text-stone-500">We're working on adding amazing {activeTabInfo?.name.toLowerCase()}. Check back soon!</p>
-                {tours.length > 0 && (
-                  <div className="mt-6 p-4 bg-stone-50 rounded-xl text-left max-w-2xl mx-auto">
-                    <p className="text-xs text-stone-600 mb-2 font-bold">Debug Info:</p>
-                    <p className="text-xs text-stone-500">Total tours: {tours.length} | Active tab: {activeTab}</p>
-                    <p className="text-xs text-stone-500 mt-2">Tours by category:</p>
-                    <div className="text-xs text-stone-400 mt-1 space-y-1">
-                      {PACKAGE_TYPES.map(pkg => {
-                        const count = tours.filter(t => (t.packageType || 'domestic') === pkg.id).length;
-                        return (
-                          <div key={pkg.id}>
-                            {pkg.name}: {count} tour{count !== 1 ? 's' : ''}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
