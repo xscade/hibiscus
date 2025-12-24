@@ -197,7 +197,7 @@ const Navbar: React.FC = () => {
           >
             <Link
               to="/"
-              className={`text-2xl font-serif font-medium mb-6 ${
+              className={`text-2xl font-serif font-medium mb-8 ${
                 location.pathname === '/' ? 'text-hibiscus-600' : 'text-stone-600'
               }`}
               onClick={() => setIsOpen(false)}
@@ -206,10 +206,10 @@ const Navbar: React.FC = () => {
             </Link>
 
             {/* Mobile Tours Dropdown */}
-            <div className="w-full max-w-xs">
+            <div className="w-full max-w-xs mb-8">
               <button
                 onClick={() => setShowMobileToursMenu(!showMobileToursMenu)}
-                className={`text-2xl font-serif font-medium flex items-center justify-center gap-2 w-full mb-2 ${
+                className={`text-2xl font-serif font-medium flex items-center justify-center gap-2 w-full mb-3 ${
                   isToursPage ? 'text-hibiscus-600' : 'text-stone-600'
                 }`}
               >
@@ -226,23 +226,23 @@ const Navbar: React.FC = () => {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="bg-stone-50 rounded-2xl overflow-hidden mb-4"
+                    className="bg-stone-50 rounded-2xl overflow-hidden"
                   >
                     <Link
                       to="/tours"
-                      className="flex items-center gap-3 px-4 py-3 text-stone-700 hover:bg-hibiscus-50 hover:text-hibiscus-600 transition-colors font-medium text-sm border-b border-stone-100"
+                      className="block px-4 py-3 text-stone-700 hover:bg-hibiscus-50 hover:text-hibiscus-600 transition-colors font-medium text-sm border-b border-stone-100"
                       onClick={() => setIsOpen(false)}
                     >
-                      <span>📋</span> View All Packages
+                      View All Packages
                     </Link>
                     {PACKAGE_TYPES.map((pkg) => (
                       <Link
                         key={pkg.id}
                         to={`/tours#${pkg.id}`}
-                        className="flex items-center gap-3 px-4 py-3 text-stone-600 hover:bg-hibiscus-50 hover:text-hibiscus-600 transition-colors text-sm"
+                        className="block px-4 py-3 text-stone-600 hover:bg-hibiscus-50 hover:text-hibiscus-600 transition-colors text-sm"
                         onClick={() => setIsOpen(false)}
                       >
-                        <span>{pkg.icon}</span> {pkg.name}
+                        {pkg.name}
                       </Link>
                     ))}
                   </motion.div>
@@ -252,7 +252,7 @@ const Navbar: React.FC = () => {
 
             <Link
               to="/about"
-              className={`text-2xl font-serif font-medium mb-6 ${
+              className={`text-2xl font-serif font-medium mb-8 ${
                 location.pathname === '/about' ? 'text-hibiscus-600' : 'text-stone-600'
               }`}
               onClick={() => setIsOpen(false)}

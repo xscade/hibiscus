@@ -44,40 +44,40 @@ const TourCard: React.FC<TourCardProps> = ({ tour }) => {
       </div>
       
       {/* Content */}
-      <div className="p-6 flex flex-col flex-grow relative">
+      <div className="p-5 sm:p-6 flex flex-col flex-grow relative">
         <div className="mb-3">
-          <h3 className="text-xl font-serif font-bold text-stone-900 group-hover:text-hibiscus-600 transition-colors line-clamp-1">
+          <h3 className="text-lg sm:text-xl font-serif font-bold text-stone-900 group-hover:text-hibiscus-600 transition-colors line-clamp-1">
             {tour.title}
           </h3>
         </div>
         
-        <div className="flex items-center gap-4 text-sm text-stone-500 mb-4">
-          <div className="flex items-center gap-1.5 bg-stone-50 px-2.5 py-1 rounded-md">
-            <Clock size={14} className="text-hibiscus-500" />
+        <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-stone-500 mb-3 sm:mb-4">
+          <div className="flex items-center gap-1.5 bg-stone-50 px-2 sm:px-2.5 py-1 rounded-md">
+            <Clock size={12} className="sm:w-3.5 sm:h-3.5 text-hibiscus-500" />
             <span>{tour.days} Days</span>
           </div>
-          <div className="flex items-center gap-1.5 bg-stone-50 px-2.5 py-1 rounded-md flex-1">
-            <MapPin size={14} className="text-hibiscus-500 shrink-0" />
+          <div className="flex items-center gap-1.5 bg-stone-50 px-2 sm:px-2.5 py-1 rounded-md flex-1 min-w-0">
+            <MapPin size={12} className="sm:w-3.5 sm:h-3.5 text-hibiscus-500 shrink-0" />
             <span className="truncate">{tour.location}</span>
           </div>
         </div>
         
-        <p className="text-stone-600 text-sm line-clamp-3 mb-6 flex-grow leading-relaxed">
+        <p className="text-stone-600 text-xs sm:text-sm line-clamp-3 mb-4 sm:mb-6 flex-grow leading-relaxed">
           {tour.description}
         </p>
         
-        <div className="flex items-center justify-between pt-5 border-t border-stone-100 mt-auto">
-          <div className="flex flex-col relative">
+        <div className="flex items-center justify-between pt-4 sm:pt-5 border-t border-stone-100 mt-auto gap-3">
+          <div className="flex flex-col relative min-w-0">
             <span className="text-xs text-stone-400 uppercase tracking-wide">From</span>
-            <span className="text-lg font-bold text-stone-900">₹{tour.price.toLocaleString('en-IN')}</span>
+            <span className="text-base sm:text-lg font-bold text-stone-900">₹{tour.price.toLocaleString('en-IN')}</span>
           </div>
           
           <Link 
             to={`/tours/${tour.id}`}
-            className="flex items-center justify-center gap-2 bg-stone-900 text-white px-5 py-2.5 rounded-xl font-medium text-sm group-hover:bg-hibiscus-600 transition-colors duration-300 shadow-md group-hover:shadow-hibiscus-600/20"
+            className="flex items-center justify-center gap-1.5 sm:gap-2 bg-stone-900 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl font-medium text-xs sm:text-sm group-hover:bg-hibiscus-600 transition-colors duration-300 shadow-md group-hover:shadow-hibiscus-600/20 whitespace-nowrap shrink-0"
           >
             View Details
-            <ArrowRight size={16} />
+            <ArrowRight size={14} className="sm:w-4 sm:h-4" />
           </Link>
         </div>
       </div>
