@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load environment variables from .env.local
-dotenv.config({ path: '../.env.local' });
+dotenv.config({ path: path.join(__dirname, '..', '.env.local') });
 
 const app = express();
 const PORT = 5000;
@@ -593,25 +593,46 @@ app.post('/api/admin/reset', async (req, res) => {
   }
 });
 
-// Upload image endpoint
-app.post('/api/upload/image', upload.single('image'), (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+// Upload image endpoint - SIMPLE AND DIRECT
+app.post('/api/upload/image', (req, res) => {
+  upload.single('image')(req, res, (err) => {
+    // Handle multer errors
+    if (err) {
+      console.error('Upload error:', err);
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ 
+            error: 'File too large. Maximum size is 10MB.',
+            success: false 
+          });
+        }
+      }
+      return res.status(400).json({ 
+        error: err.message || 'Failed to upload image',
+        success: false 
+      });
     }
 
-    // Return the path relative to public folder (for Vite static serving)
+    // Check if file was uploaded
+    if (!req.file) {
+      return res.status(400).json({ 
+        error: 'No file uploaded. Please select an image file.',
+        success: false 
+      });
+    }
+
+    // Return the path relative to public folder
     const imagePath = `/uploads/tours/${req.file.filename}`;
+    
+    console.log('✅ Image uploaded successfully:', req.file.filename);
+    console.log('   Saved to:', path.join(publicPath, 'uploads', 'tours', req.file.filename));
     
     res.json({ 
       success: true, 
       imagePath: imagePath,
       filename: req.file.filename
     });
-  } catch (error) {
-    console.error('Upload error:', error);
-    res.status(500).json({ error: 'Failed to upload image: ' + error.message });
-  }
+  });
 });
 
 // Health check

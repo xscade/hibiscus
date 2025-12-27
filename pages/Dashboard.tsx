@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -65,6 +65,28 @@ const Dashboard: React.FC = () => {
   // Image upload state
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [serverOnline, setServerOnline] = useState<boolean | null>(null);
+  
+  // Check if server is running
+  useEffect(() => {
+    const checkServer = async () => {
+      if (!import.meta.env.DEV) {
+        setServerOnline(true); // Assume server is available in production
+        return;
+      }
+      
+      try {
+        const response = await fetch('http://localhost:5000/api/health');
+        setServerOnline(response.ok);
+      } catch (error) {
+        setServerOnline(false);
+      }
+    };
+    
+    checkServer();
+    const interval = setInterval(checkServer, 5000); // Check every 5 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   // New Tour Template
   const emptyTour: Tour = {
@@ -234,23 +256,46 @@ const Dashboard: React.FC = () => {
       const response = await fetch(`${API_URL}/upload/image`, {
         method: 'POST',
         body: formData,
+        // Don't set Content-Type header - let browser set it with boundary for FormData
       });
 
-      if (!response.ok) {
-        throw new Error('Upload failed');
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        // If we can't parse JSON, it's likely a network error or server is down
+        if (!response.ok) {
+          throw new Error(`Server error (${response.status}): ${response.statusText}. Make sure the Express server is running on port 5000 (run: npm run server)`);
+        }
+        throw new Error('Invalid response from server. Make sure the server is running.');
       }
 
-      const data = await response.json();
+      if (!response.ok || !data.success) {
+        const errorMsg = data.error || `Upload failed: ${response.status} ${response.statusText}`;
+        throw new Error(errorMsg);
+      }
       
-      if (data.success && data.imagePath) {
+      if (data.imagePath) {
         // Update the tour image path
         if (editingTour) {
           setEditingTour({ ...editingTour, image: data.imagePath });
         }
+        // Update preview to use the actual path
+        setImagePreview(data.imagePath);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading image:', error);
-      alert('Failed to upload image. Please try again.');
+      let errorMessage = '';
+      
+      if (error.name === 'TypeError' && (error.message?.includes('fetch') || error.message?.includes('Failed to fetch'))) {
+        errorMessage = '❌ Cannot connect to server!\n\nPlease start the server:\n1. Open a terminal\n2. Run: npm run server\n3. Wait for "Server running on http://localhost:5000"\n4. Keep the terminal open\n5. Try uploading again';
+      } else if (error.message) {
+        errorMessage = error.message;
+      } else {
+        errorMessage = 'Failed to upload image. Make sure the server is running (npm run server)';
+      }
+      
+      alert(errorMessage);
       setImagePreview(null);
     } finally {
       setUploadingImage(false);
@@ -666,6 +711,12 @@ const Dashboard: React.FC = () => {
                     </select>
                   </InputGroup>
                   <InputGroup label="Tour Image">
+                    {import.meta.env.DEV && serverOnline === false && (
+                      <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-sm text-red-700 font-semibold">⚠️ Server Not Running</p>
+                        <p className="text-xs text-red-600 mt-1">Please run: <code className="bg-red-100 px-2 py-1 rounded">npm run server</code></p>
+                      </div>
+                    )}
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
                         <label className="flex-1 cursor-pointer">
@@ -673,11 +724,11 @@ const Dashboard: React.FC = () => {
                             type="file"
                             accept="image/*"
                             onChange={handleImageUpload}
-                            disabled={uploadingImage}
+                            disabled={uploadingImage || (import.meta.env.DEV && serverOnline === false)}
                             className="hidden"
                             id="image-upload"
                           />
-                          <div className="w-full bg-stone-50 border-2 border-dashed border-stone-300 rounded-xl px-4 py-6 text-center hover:border-hibiscus-500 hover:bg-hibiscus-50 transition-colors cursor-pointer">
+                          <div className={`w-full bg-stone-50 border-2 border-dashed border-stone-300 rounded-xl px-4 py-6 text-center transition-colors ${uploadingImage || (import.meta.env.DEV && serverOnline === false) ? 'opacity-50 cursor-not-allowed' : 'hover:border-hibiscus-500 hover:bg-hibiscus-50 cursor-pointer'}`}>
                             {uploadingImage ? (
                               <div className="flex flex-col items-center gap-2">
                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-hibiscus-600"></div>
