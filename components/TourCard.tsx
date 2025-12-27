@@ -18,11 +18,15 @@ const TourCard: React.FC<TourCardProps> = ({ tour }) => {
       className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:shadow-hibiscus-900/5 border border-stone-100 flex flex-col h-full transition-all duration-300"
     >
       {/* Image Container */}
-      <div className="relative overflow-hidden aspect-[4/3]">
+      <div className="relative overflow-hidden aspect-[4/3] bg-stone-200">
         <img 
-          src={tour.image} 
+          src={tour.image || 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?q=80&w=800&auto=format&fit=crop'} 
           alt={tour.title} 
           className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?q=80&w=800&auto=format&fit=crop';
+          }}
         />
         
         {/* Category Badge */}

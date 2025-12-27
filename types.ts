@@ -14,6 +14,7 @@ export interface Tour {
   packageType: PackageType;
   featured: boolean;
   showInPopup?: boolean;
+  inclusions?: string[];
 }
 
 export interface ItineraryDay {

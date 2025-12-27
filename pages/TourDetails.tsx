@@ -27,11 +27,15 @@ const TourDetails: React.FC = () => {
   return (
     <div className="bg-cream min-h-screen pb-20">
       {/* Hero Banner */}
-      <div className="relative h-[50vh] sm:h-[60vh] md:h-[70vh] w-full">
+      <div className="relative h-[50vh] sm:h-[60vh] md:h-[70vh] w-full overflow-hidden">
         <img 
-          src={tour.image} 
+          src={tour.image || 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?q=80&w=1920&auto=format&fit=crop'} 
           alt={tour.title} 
-          className="w-full h-full object-cover fixed top-0 left-0 -z-10" 
+          className="absolute inset-0 w-full h-full object-cover"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?q=80&w=1920&auto=format&fit=crop';
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-stone-900/90 via-stone-900/40 to-stone-900/20" />
         
@@ -162,26 +166,39 @@ const TourDetails: React.FC = () => {
                       </div>
                     </div>
                     
-                    <div className="space-y-4 sm:space-y-5 mb-6 sm:mb-8">
-                      <div className="flex items-center gap-3 sm:gap-4 text-stone-700">
-                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600 shrink-0">
-                          <Coffee size={16} className="sm:w-[18px] sm:h-[18px]" />
-                        </div>
-                        <span className="font-medium text-sm sm:text-base">Hotels & Breakfast</span>
+                    {tour.inclusions && tour.inclusions.length > 0 && (
+                      <div className="space-y-4 sm:space-y-5 mb-6 sm:mb-8">
+                        {tour.inclusions.map((inclusion, index) => {
+                          // Map inclusion text to icon and color
+                          let icon = <Coffee size={16} className="sm:w-[18px] sm:h-[18px]" />;
+                          let bgColor = 'bg-green-50';
+                          let iconColor = 'text-green-600';
+                          
+                          if (inclusion.toLowerCase().includes('car') || inclusion.toLowerCase().includes('vehicle') || inclusion.toLowerCase().includes('transport')) {
+                            icon = <Car size={16} className="sm:w-[18px] sm:h-[18px]" />;
+                            bgColor = 'bg-blue-50';
+                            iconColor = 'text-blue-600';
+                          } else if (inclusion.toLowerCase().includes('guide') || inclusion.toLowerCase().includes('language') || inclusion.toLowerCase().includes('english')) {
+                            icon = <Languages size={16} className="sm:w-[18px] sm:h-[18px]" />;
+                            bgColor = 'bg-purple-50';
+                            iconColor = 'text-purple-600';
+                          } else if (inclusion.toLowerCase().includes('hotel') || inclusion.toLowerCase().includes('breakfast') || inclusion.toLowerCase().includes('meal')) {
+                            icon = <Coffee size={16} className="sm:w-[18px] sm:h-[18px]" />;
+                            bgColor = 'bg-green-50';
+                            iconColor = 'text-green-600';
+                          }
+                          
+                          return (
+                            <div key={index} className="flex items-center gap-3 sm:gap-4 text-stone-700">
+                              <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full ${bgColor} flex items-center justify-center ${iconColor} shrink-0`}>
+                                {icon}
+                              </div>
+                              <span className="font-medium text-sm sm:text-base">{inclusion}</span>
+                            </div>
+                          );
+                        })}
                       </div>
-                      <div className="flex items-center gap-3 sm:gap-4 text-stone-700">
-                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
-                           <Car size={16} className="sm:w-[18px] sm:h-[18px]" />
-                        </div>
-                        <span className="font-medium text-sm sm:text-base">Private AC Car</span>
-                      </div>
-                      <div className="flex items-center gap-3 sm:gap-4 text-stone-700">
-                         <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
-                           <Languages size={16} className="sm:w-[18px] sm:h-[18px]" />
-                         </div>
-                        <span className="font-medium text-sm sm:text-base">English Speaking Guide</span>
-                      </div>
-                    </div>
+                    )}
 
                     <Link to="/contact" className="block w-full text-center bg-hibiscus-600 text-white py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg hover:bg-hibiscus-700 transition-colors shadow-lg shadow-hibiscus-600/20 mb-3">
                       Request Quote

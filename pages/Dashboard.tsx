@@ -26,15 +26,19 @@ import {
   EyeOff,
   Star,
   ListOrdered,
-  Minus
+  Minus,
+  Coffee
 } from 'lucide-react';
 import { Tour, PackageType } from '../types';
 import { PACKAGE_TYPES } from '../constants';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { tours, inquiries, deleteTour, updateTour, addTour, markInquiryRead } = useData();
+  const { tours, inquiries, deleteTour, updateTour, addTour, markInquiryRead, refreshTours } = useData();
   const { isAuthenticated, login, logout, loading: authLoading } = useAuth();
+  
+  // API Base URL - uses relative URL in production (Vercel), localhost in development
+  const API_URL = import.meta.env.DEV ? 'http://localhost:5000/api' : '/api';
   
   // Auth State
   const [username, setUsername] = useState('');
@@ -56,6 +60,11 @@ const Dashboard: React.FC = () => {
   // Highlight & Itinerary Input State
   const [newHighlight, setNewHighlight] = useState('');
   const [newItineraryDay, setNewItineraryDay] = useState({ title: '', description: '' });
+  const [newInclusion, setNewInclusion] = useState('');
+  
+  // Image upload state
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // New Tour Template
   const emptyTour: Tour = {
@@ -71,7 +80,8 @@ const Dashboard: React.FC = () => {
     featured: false,
     showInPopup: false,
     highlights: [],
-    itinerary: []
+    itinerary: [],
+    inclusions: []
   };
 
   // Handle Show in Popup toggle - ensures only one tour has this enabled
@@ -141,6 +151,27 @@ const Dashboard: React.FC = () => {
     });
   };
 
+  // Add inclusion
+  const handleAddInclusion = () => {
+    if (!newInclusion.trim() || !editingTour) return;
+    const currentInclusions = editingTour.inclusions || [];
+    setEditingTour({
+      ...editingTour,
+      inclusions: [...currentInclusions, newInclusion.trim()]
+    });
+    setNewInclusion('');
+  };
+
+  // Remove inclusion
+  const handleRemoveInclusion = (index: number) => {
+    if (!editingTour) return;
+    const currentInclusions = editingTour.inclusions || [];
+    setEditingTour({
+      ...editingTour,
+      inclusions: currentInclusions.filter((_, i) => i !== index)
+    });
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginLoading(true);
@@ -160,12 +191,70 @@ const Dashboard: React.FC = () => {
 
   const handleEdit = (tour: Tour) => {
     setEditingTour(tour);
+    setImagePreview(tour.image || null);
     setIsEditing(true);
   };
 
   const handleCreate = () => {
     setEditingTour({ ...emptyTour, id: `tour-${Date.now()}` });
+    setImagePreview(null);
     setIsEditing(true);
+  };
+  
+  // Handle image file upload
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.match('image.*')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Validate file size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Image size should be less than 10MB');
+      return;
+    }
+
+    // Show preview immediately
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to server
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch(`${API_URL}/upload/image`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.imagePath) {
+        // Update the tour image path
+        if (editingTour) {
+          setEditingTour({ ...editingTour, image: data.imagePath });
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image. Please try again.');
+      setImagePreview(null);
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleSave = async () => {
@@ -180,10 +269,14 @@ const Dashboard: React.FC = () => {
       } else {
         await addTour(editingTour as Tour);
       }
+      // Refresh tours to ensure latest data including images
+      await refreshTours();
       setIsEditing(false);
       setEditingTour(null);
+      setImagePreview(null);
       setNewHighlight('');
       setNewItineraryDay({ title: '', description: '' });
+      setNewInclusion('');
     } catch (error) {
       console.error('Failed to save tour:', error);
       alert('Failed to save tour. Please try again.');
@@ -441,8 +534,16 @@ const Dashboard: React.FC = () => {
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                  {tours.map((tour) => (
                    <div key={tour.id} className="bg-white group rounded-2xl overflow-hidden shadow-sm border border-stone-100 hover:shadow-xl hover:border-hibiscus-100 transition-all duration-300">
-                     <div className="relative h-48">
-                        <img src={tour.image} alt={tour.title} className="w-full h-full object-cover" />
+                     <div className="relative h-48 bg-stone-200">
+                        <img 
+                          src={tour.image || 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?q=80&w=800&auto=format&fit=crop'} 
+                          alt={tour.title} 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?q=80&w=800&auto=format&fit=crop';
+                          }}
+                        />
                         <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button 
                             onClick={() => handleEdit(tour)}
@@ -564,14 +665,58 @@ const Dashboard: React.FC = () => {
                       ))}
                     </select>
                   </InputGroup>
-                  <InputGroup label="Image URL">
-                    <input 
-                      type="text" 
-                      value={editingTour.image} 
-                      onChange={e => setEditingTour({...editingTour, image: e.target.value})}
-                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-hibiscus-500"
-                      placeholder="https://..."
-                    />
+                  <InputGroup label="Tour Image">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <label className="flex-1 cursor-pointer">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            disabled={uploadingImage}
+                            className="hidden"
+                            id="image-upload"
+                          />
+                          <div className="w-full bg-stone-50 border-2 border-dashed border-stone-300 rounded-xl px-4 py-6 text-center hover:border-hibiscus-500 hover:bg-hibiscus-50 transition-colors cursor-pointer">
+                            {uploadingImage ? (
+                              <div className="flex flex-col items-center gap-2">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-hibiscus-600"></div>
+                                <p className="text-sm text-stone-600 font-medium">Uploading...</p>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center gap-2">
+                                <ImageIcon size={32} className="text-stone-400" />
+                                <p className="text-sm font-medium text-stone-700">
+                                  Click to upload image
+                                </p>
+                                <p className="text-xs text-stone-500">PNG, JPG, GIF, WEBP up to 10MB</p>
+                              </div>
+                            )}
+                          </div>
+                        </label>
+                      </div>
+                      
+                      {(imagePreview || editingTour.image) && (
+                        <div className="rounded-xl overflow-hidden border border-stone-200 bg-stone-50">
+                          <img 
+                            src={imagePreview || editingTour.image || ''} 
+                            alt="Preview" 
+                            className="w-full h-64 object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?q=80&w=800&auto=format&fit=crop';
+                              target.classList.add('opacity-50');
+                            }}
+                          />
+                          <div className="p-3 bg-stone-50 border-t border-stone-200 flex justify-between items-center">
+                            <p className="text-xs text-stone-500">Image Preview</p>
+                            {editingTour.image && (
+                              <span className="text-xs text-stone-400 font-mono">{editingTour.image}</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </InputGroup>
                 </div>
 
@@ -724,14 +869,63 @@ const Dashboard: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Inclusions Section */}
+                <div className="border border-stone-200 rounded-xl p-4 bg-stone-50">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Coffee size={18} className="text-hibiscus-600" />
+                    <h3 className="font-bold text-stone-800">Package Inclusions</h3>
+                  </div>
+                  
+                  {/* Current Inclusions */}
+                  <div className="space-y-2 mb-4">
+                    {(editingTour.inclusions || []).length === 0 ? (
+                      <p className="text-stone-400 text-sm italic">No inclusions added yet</p>
+                    ) : (
+                      (editingTour.inclusions || []).map((inclusion, index) => (
+                        <div key={index} className="flex items-center gap-2 bg-white p-3 rounded-lg border border-stone-100">
+                          <span className="flex-1 text-stone-700">{inclusion}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveInclusion(index)}
+                            className="p-1 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Minus size={16} />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  
+                  {/* Add New Inclusion */}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newInclusion}
+                      onChange={(e) => setNewInclusion(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddInclusion())}
+                      placeholder="Enter inclusion (e.g., Hotels & Breakfast, Private AC Car, English Speaking Guide)"
+                      className="flex-1 bg-white border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-hibiscus-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddInclusion}
+                      className="px-4 py-2 bg-hibiscus-600 text-white rounded-lg text-sm font-bold hover:bg-hibiscus-700 transition-colors flex items-center gap-1"
+                    >
+                      <Plus size={16} /> Add
+                    </button>
+                  </div>
+                </div>
+
               </div>
 
               <div className="bg-stone-50 p-6 flex justify-end gap-4 rounded-b-3xl">
                 <button 
                   onClick={() => {
                     setIsEditing(false);
+                    setImagePreview(null);
                     setNewHighlight('');
                     setNewItineraryDay({ title: '', description: '' });
+                    setNewInclusion('');
                   }}
                   disabled={saving}
                   className="px-6 py-3 rounded-xl font-bold text-stone-500 hover:bg-stone-200 transition-colors"

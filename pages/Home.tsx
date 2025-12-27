@@ -75,11 +75,15 @@ const Home: React.FC = () => {
               </div>
 
               {/* Tour Image */}
-              <div className="relative h-56 overflow-hidden">
+              <div className="relative h-56 overflow-hidden bg-stone-200">
                 <img
-                  src={popupTour.image}
+                  src={popupTour.image || 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?q=80&w=800&auto=format&fit=crop'}
                   alt={popupTour.title}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?q=80&w=800&auto=format&fit=crop';
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                 
@@ -306,7 +310,15 @@ const Home: React.FC = () => {
               <div key={t.id} className="bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 border border-stone-100 relative group">
                 <div className="text-hibiscus-200 absolute top-4 sm:top-6 right-6 sm:right-8 text-5xl sm:text-7xl font-serif leading-none opacity-50 group-hover:text-hibiscus-300 transition-colors">"</div>
                 <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-                  <img src={t.image} alt={t.name} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover border-4 border-hibiscus-50 group-hover:border-hibiscus-100 transition-colors shrink-0" />
+                  <img 
+                    src={t.image} 
+                    alt={t.name} 
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover border-4 border-hibiscus-50 group-hover:border-hibiscus-100 transition-colors shrink-0"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?q=80&w=200&auto=format&fit=crop';
+                    }}
+                  />
                   <div>
                     <h4 className="font-bold text-stone-900 text-sm sm:text-base">{t.name}</h4>
                     <p className="text-xs text-hibiscus-600 font-bold uppercase tracking-wider">{t.role}</p>
