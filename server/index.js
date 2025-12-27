@@ -19,11 +19,13 @@ const PORT = 5000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
 
-// Serve uploaded images statically (from root public folder)
+// Serve uploaded images statically (from root public folder) - MUST be before express.json()
 const publicPath = path.join(__dirname, '..', 'public');
 app.use('/uploads', express.static(path.join(publicPath, 'uploads')));
+
+// JSON parser - AFTER static file serving (important for file uploads)
+app.use(express.json());
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -595,10 +597,12 @@ app.post('/api/admin/reset', async (req, res) => {
 
 // Upload image endpoint - SIMPLE AND DIRECT
 app.post('/api/upload/image', (req, res) => {
+  console.log('📤 Upload request received');
+  
   upload.single('image')(req, res, (err) => {
     // Handle multer errors
     if (err) {
-      console.error('Upload error:', err);
+      console.error('❌ Upload error:', err);
       if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
           return res.status(400).json({ 
@@ -606,6 +610,10 @@ app.post('/api/upload/image', (req, res) => {
             success: false 
           });
         }
+        return res.status(400).json({ 
+          error: `Upload error: ${err.code} - ${err.message}`,
+          success: false 
+        });
       }
       return res.status(400).json({ 
         error: err.message || 'Failed to upload image',
@@ -615,6 +623,7 @@ app.post('/api/upload/image', (req, res) => {
 
     // Check if file was uploaded
     if (!req.file) {
+      console.error('❌ No file in request');
       return res.status(400).json({ 
         error: 'No file uploaded. Please select an image file.',
         success: false 
@@ -623,9 +632,11 @@ app.post('/api/upload/image', (req, res) => {
 
     // Return the path relative to public folder
     const imagePath = `/uploads/tours/${req.file.filename}`;
+    const fullPath = path.join(publicPath, 'uploads', 'tours', req.file.filename);
     
     console.log('✅ Image uploaded successfully:', req.file.filename);
-    console.log('   Saved to:', path.join(publicPath, 'uploads', 'tours', req.file.filename));
+    console.log('   Path:', imagePath);
+    console.log('   Full path:', fullPath);
     
     res.json({ 
       success: true, 
